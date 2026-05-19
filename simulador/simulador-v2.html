@@ -154,11 +154,11 @@
                 </div>
             </div>
 
-            <div id="statusBox">⏳ Redirecionando para o WhatsApp... aguarde.</div>
+            <div id="statusBox">✅ Redirecionando para o WhatsApp...</div>
 
             <div class="actions">
                 <button type="button" class="btn btn-back" onclick="changeStep(1)">🡨 Voltar</button>
-                <button type="submit" class="btn btn-primary" id="btnGerar">Gerar Cotação (WhatsApp)</button>
+                <button type="submit" class="btn btn-primary" id="btnGerar">Solicitar Cotação (WhatsApp)</button>
             </div>
         </form>
     </div>
@@ -167,12 +167,11 @@
 
 <script>
     // Configurações Base
-    const webhookURL = "https://n8n-n8n-start.fzyyl2.easypanel.host/webhook/chamada";
     const numeroCorretor = "5522997389593";
     let dadosTabelas = {};
     const faixas = ["0-18", "19-23", "24-28", "29-33", "34-38", "39-43", "44-48", "49-53", "54-58", "59+"];
 
-    // 1. Carregar JSON Dinamicamente (Apenas para listar as operadoras)
+    // Carregar JSON Dinamicamente (Apenas para popular o select de operadoras)
     fetch('tabela_precos_saude.json')
         .then(res => res.json())
         .then(json => {
@@ -241,13 +240,12 @@
         if(val && !val.startsWith('55')) { inputWhats.value = '55' + val; }
     });
 
-    // Disparo Duplo (Submissão do Formulário)
-    document.getElementById('formCotacao').addEventListener('submit', async (e) => {
+    // Submissão do Formulário Direto pro WhatsApp
+    document.getElementById('formCotacao').addEventListener('submit', (e) => {
         e.preventDefault();
 
         // Extrai Idades e Valida Mínimo de 1 Vida
         const inputsIdades = document.querySelectorAll('.qtd-idade');
-        const vidas_por_faixa = {};
         let totalVidas = 0;
         let resumoIdadesTexto = "";
         
@@ -255,9 +253,7 @@
             const qtd = parseInt(input.value) || 0;
             if (qtd > 0) {
                 const faixa = input.getAttribute('data-faixa');
-                vidas_por_faixa[faixa] = qtd;
                 totalVidas += qtd;
-                // Prepara a string de idades para o WhatsApp
                 resumoIdadesTexto += `  ├ ${qtd} vida(s) de ${faixa} anos\n`;
             }
         });
@@ -278,38 +274,14 @@
         const numCnpj = document.getElementById('cnpj').value.trim();
         const temPlanoAtual = document.querySelector('input[name="tem_plano"]:checked').value === 'sim';
 
-        // Monta o Payload para o N8N (Back-end) sem valor estimado
-        const payload = {
-            plano_nome: opSelecionada,
-            nome: nomeCliente,
-            email: emailCliente,
-            whatsapp: whatsVal,
-            vidas_por_faixa: vidas_por_faixa,
-            tem_cnpj: possuiCnpj,
-            cnpj: numCnpj,
-            tem_plano: temPlanoAtual,
-            timestamp: new Date().toISOString()
-        };
-
-        // UI Feedback
+        // UI Feedback imediato
         const btn = document.getElementById('btnGerar');
         const statusBox = document.getElementById('statusBox');
         btn.disabled = true;
         btn.style.opacity = '0.5';
         statusBox.style.display = 'block';
 
-        // Disparo para o Webhook
-        try {
-            await fetch(webhookURL, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            });
-        } catch(err) {
-            console.warn("Webhook falhou, continuando redirecionamento.", err);
-        }
-
-        // Monta a Nova Mensagem para o WhatsApp (Apenas Dados)
+        // Monta a Mensagem para o WhatsApp
         const msgTexto = `Olá! Gostaria de uma cotação para o plano *${opSelecionada}*.\n\n` +
                          `*Meus Contatos:*\n` +
                          `👤 Nome: ${nomeCliente}\n` +
@@ -324,11 +296,14 @@
                          
         const linkWhats = `https://wa.me/${numeroCorretor}?text=${encodeURIComponent(msgTexto)}`;
 
+        // Abre o WhatsApp instantaneamente e dá um pequeno delay apenas visual no botão
+        window.open(linkWhats, "_blank");
+        
         setTimeout(() => {
-            window.open(linkWhats, "_blank");
-            statusBox.innerText = "✅ Tudo pronto! Verifique a aba do WhatsApp.";
             btn.innerText = "Cotação Solicitada";
-        }, 800);
+            btn.disabled = false;
+            btn.style.opacity = '1';
+        }, 1500);
     });
 </script>
 
