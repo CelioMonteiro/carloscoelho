@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carlos Coelho | Galeria Premium</title>
+    <style>
+        :root { --cor-acento: #c82c29; --bg-light: #f8f9fa; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; color: #333; background: #fff; scroll-behavior: smooth; }
+        
+        header { display: flex; justify-content: space-between; align-items: center; padding: 15px 5%; background: #fff; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 15px rgba(0,0,0,0.05); }
+        .logo-box img { height: 60px; border-radius: 50%; background: transparent; border: 2px solid transparent; }
+        
+        nav a { text-decoration: none; color: #333; font-weight: 500; margin-left: 20px; transition: 0.3s; }
+        nav a:hover { color: var(--cor-acento); }
+
+        .hero { 
+            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('hero.png'); 
+            background-size: cover; background-position: center; height: 80vh;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center;
+            padding: 0 5%;
+        }
+
+        .hero h1 { font-size: 3.5rem; margin: 0; letter-spacing: 2px; }
+        .hero p { font-size: 1.2rem; margin: 20px 0; opacity: 0.9; }
+
+        /* Container de botões no Hero */
+        .hero-btns {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn-contato {
+            background-color: var(--cor-acento);
+            color: white;
+            padding: 12px 25px;
+            text-decoration: none;
+            font-weight: bold;
+            border-radius: 30px;
+            transition: 0.3s;
+            display: inline-flex;
+            align-items: center;
+        }
+        .btn-contato:hover { background-color: #a52421; transform: scale(1.05); }
+
+        /* Estilo do novo botão do simulador */
+        .btn-simulador {
+            background-color: transparent;
+            color: white;
+            border: 2px solid var(--cor-acento);
+            padding: 12px 25px;
+            text-decoration: none;
+            font-weight: bold;
+            border-radius: 30px;
+            transition: 0.3s;
+            display: inline-flex;
+            align-items: center;
+        }
+        .btn-simulador:hover {
+            background-color: var(--cor-acento);
+            transform: scale(1.05);
+        }
+
+        .section-title { text-align: center; margin: 40px 0; font-size: 2rem; color: #222; }
+        .grid-galeria { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; padding: 0 5%; }
+        .item-galeria img { width: 100%; border-radius: 10px; transition: 0.3s; cursor: pointer; }
+        .item-galeria img:hover { transform: scale(1.03); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+
+        footer { background: #222; color: #fff; padding: 40px 5%; text-align: center; margin-top: 50px; }
+        .mapa-wrap { width: 100%; height: 350px; border-radius: 15px; overflow: hidden; margin-top: 20px; }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.5rem; }
+            .hero-btns { flex-direction: column; width: 100%; }
+            .btn-contato, .btn-simulador { width: 80%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-box">
+            <img src="logo.png" alt="Logo Carlos Coelho">
+        </div>
+        <nav>
+            <a href="#galeria">Galeria</a>
+            <a href="#contato" class="btn-contato">Contato</a>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <h1>Carlos Coelho</h1>
+        <p>Consultoria Premium em Planos de Saúde</p>
+        
+        <div class="hero-btns">
+            <a href="https://wa.me/5522997389593" class="btn-contato" target="_blank">
+                Falar no WhatsApp
+            </a>
+
+            <a href="simulador/simulador.html" class="btn-simulador">
+                Simular Preços Agora
+            </a>
+        </div>
+    </section>
+
+    <section id="galeria" style="background: var(--bg-light); padding-bottom: 50px;">
+        <h2 class="section-title">Galeria de Destaques</h2>
+        <div class="grid-galeria">
+            <div class="item-galeria"><img src="galeria_1.png" alt="Destaque 1"></div>
+            <div class="item-galeria"><img src="galeria_2.png" alt="Destaque 2"></div>
+            <div class="item-galeria"><img src="galeria_3.png" alt="Destaque 3"></div>
+            <div class="item-galeria"><img src="galeria_4.png" alt="Destaque 4"></div>
+        </div>
+    </section>
+
+    <section id="contato" style="padding: 50px 5%;">
+        <h2 class="section-title">Onde nos Encontrar</h2>
+        <p style="text-align:center; font-weight: bold; margin-bottom: 5px;">Unidade Icaraí:</p>
+        <p style="text-align:center; margin-bottom: 20px;">Rua Mariz e Barros, 147 - Loja 201 - Icaraí, Niterói</p>
+        
+        <div class="mapa-wrap">
+            <iframe width="100%" height="100%" frameborder="0" style="border:0" 
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3675.215438848529!2d-43.1070267!3d-22.9054457!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x9981816e88691b%3A0xc3194a0815307374!2sR.%20Mariz%20e%20Barros%2C%20147%20-%20Icara%C3%AD%2C%20Niter%C3%B3i%20-%20RJ%2C%2024220-120!5e0!3m2!1spt-BR!2sbr!4v1715790000000!5m2!1spt-BR!2sbr" 
+                allowfullscreen></iframe>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; 2026 Carlos Coelho - Consultoria de Saúde. Todos os direitos reservados.</p>
+    </footer>
+
+</body>
+</html>
