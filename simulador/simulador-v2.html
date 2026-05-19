@@ -44,7 +44,7 @@
         .step.active { display: block; animation: fadeIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Form Elements (Inspirado no aaa.html) */
+        /* Form Elements */
         label { display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px; }
         select, input[type="text"], input[type="tel"], input[type="email"], input[type="number"] { 
             width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #d6dee8; 
@@ -117,7 +117,7 @@
                 </div>
                 <div>
                     <label>WhatsApp (apenas números)</label>
-                    <input type="tel" id="whatsapp" required placeholder="Ex: +5521967744616">
+                    <input type="tel" id="whatsapp" required placeholder="Ex: 5521999999999">
                     <div class="hint">Comece com 55 (DDI).</div>
                 </div>
                 <div>
@@ -154,7 +154,7 @@
                 </div>
             </div>
 
-            <div id="statusBox">⏳ Enviando dados da cotação... aguarde.</div>
+            <div id="statusBox">⏳ Redirecionando para o WhatsApp... aguarde.</div>
 
             <div class="actions">
                 <button type="button" class="btn btn-back" onclick="changeStep(1)">🡨 Voltar</button>
@@ -172,7 +172,7 @@
     let dadosTabelas = {};
     const faixas = ["0-18", "19-23", "24-28", "29-33", "34-38", "39-43", "44-48", "49-53", "54-58", "59+"];
 
-    // 1. Carregar JSON Dinamicamente
+    // 1. Carregar JSON Dinamicamente (Apenas para listar as operadoras)
     fetch('tabela_precos_saude.json')
         .then(res => res.json())
         .then(json => {
@@ -186,7 +186,6 @@
         const select = document.getElementById('select-operadora');
         select.innerHTML = '<option value="">Selecione uma operadora...</option>';
         Object.keys(dadosTabelas).forEach(op => {
-            // Capitaliza o nome bonitinho
             const nomeFormatado = op.replace(/\b\w/g, l => l.toUpperCase());
             select.add(new Option(nomeFormatado, op));
         });
@@ -250,12 +249,16 @@
         const inputsIdades = document.querySelectorAll('.qtd-idade');
         const vidas_por_faixa = {};
         let totalVidas = 0;
+        let resumoIdadesTexto = "";
         
         inputsIdades.forEach(input => {
             const qtd = parseInt(input.value) || 0;
             if (qtd > 0) {
-                vidas_por_faixa[input.getAttribute('data-faixa')] = qtd;
+                const faixa = input.getAttribute('data-faixa');
+                vidas_por_faixa[faixa] = qtd;
                 totalVidas += qtd;
+                // Prepara a string de idades para o WhatsApp
+                resumoIdadesTexto += `  ├ ${qtd} vida(s) de ${faixa} anos\n`;
             }
         });
 
@@ -267,31 +270,24 @@
         let whatsVal = inputWhats.value;
         if(whatsVal && !whatsVal.startsWith('55')) { whatsVal = '55' + whatsVal; }
 
-        // Operadora Selecionada
-        const opSelecionada = document.getElementById('select-operadora').value;
-        
-        // --- Cálculo Oculto do Valor Estimado para anexar na msg ---
-        let valorEstimadoMensal = 0;
-        Object.entries(vidas_por_faixa).forEach(([faixa, qtd]) => {
-            // Tenta pegar o valor de Enfermaria (E) primeiro, se não tiver, pega o que houver.
-            const precoE = dadosTabelas[opSelecionada]?.["E"]?.[faixa] || 0;
-            const precoA = dadosTabelas[opSelecionada]?.["A"]?.[faixa] || 0;
-            const precoRef = precoE > 0 ? precoE : precoA; 
-            valorEstimadoMensal += (qtd * precoRef);
-        });
-        const txtValor = valorEstimadoMensal > 0 ? valorEstimadoMensal.toLocaleString('pt-br', {style: 'currency', currency: 'BRL'}) : "Sob Consulta";
+        // Variáveis do Form
+        const opSelecionada = document.getElementById('select-operadora').value.toUpperCase();
+        const nomeCliente = document.getElementById('nome').value.trim();
+        const emailCliente = document.getElementById('email').value.trim();
+        const possuiCnpj = document.querySelector('input[name="tem_cnpj"]:checked').value === 'sim';
+        const numCnpj = document.getElementById('cnpj').value.trim();
+        const temPlanoAtual = document.querySelector('input[name="tem_plano"]:checked').value === 'sim';
 
-        // Monta o Payload para o N8N (Back-end)
+        // Monta o Payload para o N8N (Back-end) sem valor estimado
         const payload = {
-            plano_nome: opSelecionada.toUpperCase(),
-            nome: document.getElementById('nome').value.trim(),
-            email: document.getElementById('email').value.trim(),
+            plano_nome: opSelecionada,
+            nome: nomeCliente,
+            email: emailCliente,
             whatsapp: whatsVal,
             vidas_por_faixa: vidas_por_faixa,
-            tem_cnpj: document.querySelector('input[name="tem_cnpj"]:checked').value === 'sim',
-            cnpj: document.getElementById('cnpj').value.trim(),
-            tem_plano: document.querySelector('input[name="tem_plano"]:checked').value === 'sim',
-            valor_estimado_ref: txtValor,
+            tem_cnpj: possuiCnpj,
+            cnpj: numCnpj,
+            tem_plano: temPlanoAtual,
             timestamp: new Date().toISOString()
         };
 
@@ -302,7 +298,7 @@
         btn.style.opacity = '0.5';
         statusBox.style.display = 'block';
 
-        // Disparo Simultâneo (Try/Catch evita que falha no webhook impeça o envio ao Whats)
+        // Disparo para o Webhook
         try {
             await fetch(webhookURL, {
                 method: "POST",
@@ -310,23 +306,28 @@
                 body: JSON.stringify(payload)
             });
         } catch(err) {
-            console.warn("Aviso: Webhook falhou, mas redirecionando cliente mesmo assim.", err);
+            console.warn("Webhook falhou, continuando redirecionamento.", err);
         }
 
-        // Monta Mensagem para o Corretor (Front-end)
-        const msgTexto = `Olá! Quero cotar o plano: *${payload.plano_nome}*.\n` +
-                         `Nome: ${payload.nome}\n` +
-                         `Vidas cadastradas: ${totalVidas}\n` +
-                         `Valor Base pelo Site: ${txtValor}\n` +
-                         `Gostaria de ver a tabela completa!`;
+        // Monta a Nova Mensagem para o WhatsApp (Apenas Dados)
+        const msgTexto = `Olá! Gostaria de uma cotação para o plano *${opSelecionada}*.\n\n` +
+                         `*Meus Contatos:*\n` +
+                         `👤 Nome: ${nomeCliente}\n` +
+                         `📧 E-mail: ${emailCliente}\n` +
+                         `📞 WhatsApp: ${whatsVal}\n\n` +
+                         `*Detalhes da Cotação:*\n` +
+                         `🏢 Possui CNPJ?: ${possuiCnpj ? 'Sim (' + numCnpj + ')' : 'Não'}\n` +
+                         `🔄 Já tem plano?: ${temPlanoAtual ? 'Sim' : 'Não'}\n\n` +
+                         `*Composição Familiar (${totalVidas} vidas no total):*\n` +
+                         `${resumoIdadesTexto}\n` +
+                         `Aguardo o envio da tabela de preços!`;
                          
         const linkWhats = `https://wa.me/${numeroCorretor}?text=${encodeURIComponent(msgTexto)}`;
 
-        // Aguarda 1 segundinho para o usuário ler o status e abre nova aba
         setTimeout(() => {
             window.open(linkWhats, "_blank");
-            statusBox.innerText = "✅ Solicitação enviada! Verifique a nova aba do WhatsApp.";
-            btn.innerText = "Cotação Gerada";
+            statusBox.innerText = "✅ Tudo pronto! Verifique a aba do WhatsApp.";
+            btn.innerText = "Cotação Solicitada";
         }, 800);
     });
 </script>
